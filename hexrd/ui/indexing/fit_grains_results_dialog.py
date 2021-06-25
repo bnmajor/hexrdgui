@@ -15,7 +15,7 @@ from matplotlib.figure import Figure
 from PySide2.QtCore import (
     QObject, QSignalBlocker, QSortFilterProxyModel, Qt, Signal
 )
-from PySide2.QtWidgets import QFileDialog, QMenu, QSizePolicy
+from PySide2.QtWidgets import QFileDialog, QMenu, QMessageBox, QSizePolicy
 
 import hexrd.ui.constants
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -567,6 +567,25 @@ class FitGrainsResultsDialog(QObject):
     def draw_idle(self):
         self.canvas.draw_idle()
 
+    def on_export_workflow_selected(self):
+        idx_cfg = HexrdConfig().indexing_config
+        omaps = idx_cfg['find_orientations']['orientation_maps']
+        active = omaps.get("_active_hkl_strings", np.array([])).tolist()
+        current = self.material.planeData.getHKLs().tolist()
+        missing = [(' ').join(map(str, a)) for a in active if a not in current]
+
+        if missing:
+            msg = (
+                f'The following HKLs are excluded: {(", ").join(missing)}.'
+                f' Would you like to remove them from the exclusions list?')
+            response = QMessageBox.question(
+                self.ui, 'HEXRD', msg, (QMessageBox.Yes | QMessageBox.No))
+            if response == QMessageBox.Yes:
+                exclusions = self.material.planeData.exclusions
+                hkls = self.material.planeData.getHKLs(asStr=True, allHKLs=True)
+                idx = [hkls.index(m) for m in missing]
+                exclusions[idx] = False
+                self.material.planeData.exclusions = exclusions
 
 if __name__ == '__main__':
     from PySide2.QtCore import QCoreApplication
