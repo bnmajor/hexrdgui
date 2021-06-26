@@ -16,6 +16,7 @@ from PySide2.QtCore import (
     QObject, QSignalBlocker, QSortFilterProxyModel, Qt, Signal
 )
 from PySide2.QtWidgets import QFileDialog, QMenu, QMessageBox, QSizePolicy
+from PySide2.QtCore import QThreadPool
 
 import hexrd.ui.constants
 from hexrd.ui.hexrd_config import HexrdConfig
@@ -23,6 +24,8 @@ from hexrd.matrixutil import vecMVToSymm
 from hexrd.ui.indexing.fit_grains_results_model import FitGrainsResultsModel
 from hexrd.ui.navigation_toolbar import NavigationToolbar
 from hexrd.ui.ui_loader import UiLoader
+from hexrd.ui.async_worker import AsyncWorker
+from hexrd.ui.progress_dialog import ProgressDialog
 
 
 COORDS_SLICE = slice(6, 9)
@@ -70,6 +73,8 @@ class FitGrainsResultsDialog(QObject):
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
         self.ui.export_workflow.setEnabled(full_workflow)
+        self.thread_pool = QThreadPool()
+        self.progress_dialog = ProgressDialog(self.ui)
 
         self.setup_tableview()
         self.load_cmaps()
@@ -567,6 +572,23 @@ class FitGrainsResultsDialog(QObject):
     def draw_idle(self):
         self.canvas.draw_idle()
 
+    def _save_workflow_files(self, selected_directory):
+        if selected_directory:
+            parent = Path(selected_directory)/'workflow'
+            Path.mkdir(parent)
+            HexrdConfig().working_dir = selected_directory
+            HexrdConfig().save_indexing_config(f'{str(parent)}/workflow.yml')
+            HexrdConfig().save_materials(f'{str(parent)}/materials.h5')
+            HexrdConfig().save_instrument_config(f'{str(parent)}/instrument.yml')
+            ims_dict = HexrdConfig().unagg_images
+            if ims_dict is None:
+                ims_dict = HexrdConfig().imageseries_dict
+            for det in HexrdConfig().detector_names:
+                path = f'{str(parent)}/{det}.h5'
+                kwargs = {'path': 'imageseries'}
+                HexrdConfig().save_imageseries(
+                    ims_dict.get(det), det, path, 'hdf5', **kwargs)
+
     def on_export_workflow_selected(self):
         idx_cfg = HexrdConfig().indexing_config
         omaps = idx_cfg['find_orientations']['orientation_maps']
@@ -587,15 +609,15 @@ class FitGrainsResultsDialog(QObject):
                 exclusions[idx] = False
                 self.material.planeData.exclusions = exclusions
 
-        selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Workflow', HexrdConfig().working_dir, 'YAML files (*.yml)')
+        selected_directory = QFileDialog.getExistingDirectory(
+                self.ui, 'Select directory', HexrdConfig().working_dir)
 
-        if selected_file:
-            if Path(selected_file).suffix != '.yml':
-                selected_file += '.yml'
-
-            HexrdConfig().working_dir = str(Path(selected_file).parent)
-            return HexrdConfig().save_indexing_config(selected_file)
+        worker = AsyncWorker(self._save_workflow_files, selected_directory)
+        self.thread_pool.start(worker)
+        self.progress_dialog.setWindowTitle(f'Saving worflow configuration')
+        self.progress_dialog.setRange(0, 0)
+        worker.signals.finished.connect(self.progress_dialog.accept)
+        self.progress_dialog.exec_()
 
 
 if __name__ == '__main__':
