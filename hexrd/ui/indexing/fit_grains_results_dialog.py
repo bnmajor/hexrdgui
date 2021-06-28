@@ -289,7 +289,8 @@ class FitGrainsResultsDialog(QObject):
         self.ui.reset_glyph_size.clicked.connect(self.reset_glyph_size)
         self.ui.cylindrical_reference.toggled.connect(
             self.cylindrical_reference_toggled)
-        self.ui.export_workflow.clicked.connect(self.on_export_workflow_selected)
+        self.ui.export_workflow.clicked.connect(
+            self.on_export_workflow_selected)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
@@ -575,9 +576,12 @@ class FitGrainsResultsDialog(QObject):
     def _save_workflow_files(self, selected_directory):
         if selected_directory:
             HexrdConfig().working_dir = selected_directory
-            HexrdConfig().save_indexing_config(f'{str(selected_directory)}/workflow.yml')
-            HexrdConfig().save_materials(f'{str(selected_directory)}/materials.h5')
-            HexrdConfig().save_instrument_config(f'{str(selected_directory)}/instrument.yml')
+            HexrdConfig().save_indexing_config(
+                f'{str(selected_directory)}/workflow.yml')
+            HexrdConfig().save_materials(
+                f'{str(selected_directory)}/materials.h5')
+            HexrdConfig().save_instrument_config(
+                f'{str(selected_directory)}/instrument.yml')
             ims_dict = HexrdConfig().unagg_images
             if ims_dict is None:
                 ims_dict = HexrdConfig().imageseries_dict
@@ -602,7 +606,8 @@ class FitGrainsResultsDialog(QObject):
                 self.ui, 'HEXRD', msg, (QMessageBox.Yes | QMessageBox.No))
             if response == QMessageBox.Yes:
                 exclusions = self.material.planeData.exclusions
-                hkls = self.material.planeData.getHKLs(asStr=True, allHKLs=True)
+                hkls = self.material.planeData.getHKLs(
+                    asStr=True, allHKLs=True)
                 idx = [hkls.index(m) for m in missing]
                 exclusions[idx] = False
                 self.material.planeData.exclusions = exclusions
