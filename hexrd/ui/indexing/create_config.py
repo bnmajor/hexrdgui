@@ -48,12 +48,8 @@ def create_indexing_config():
     # Set this so the config won't over-write our tThWidth
     config.set('material:tth_width', np.degrees(material.planeData.tThWidth))
 
-    # Use unaggregated images if possible
+    # Use unaggregated images if possible, imageseries dict if not
     ims_dict = HexrdConfig().unagg_images
-    if ims_dict is None:
-        # This probably means the image series was never aggregated.
-        # Try using the imageseries dict.
-        ims_dict = HexrdConfig().imageseries_dict
 
     # Load omega data if it is missing
     load_omegas_dict = {
