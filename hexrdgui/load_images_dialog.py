@@ -148,6 +148,7 @@ class LoadImagesDialog:
         results = self.results()
         detectors = results.keys()
         image_files = [v for f in results.values() for v in f]
+        image_files = [Path(f).name for f in image_files]
         cur_regex = self.current_regex()
 
         try:
