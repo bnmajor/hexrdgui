@@ -23,14 +23,18 @@ from abc import ABC, abstractmethod
 
 
 class Mask(ABC):
-    def __init__(self, name='', mtype='', visible=True):
+    def __init__(self, name, mtype, visible, show_border=False):
         self.type = mtype
         self.name = name
         self.visible = visible
+        self.show_border = show_border
         self.masked_arrays = None
 
     def update_mask_visibility(self, visibility):
         self.visible = visibility
+
+    def update_border_visibility(self, visibility):
+        self.show_border = visibility
 
     # Abstract methods
     @abstractmethod
@@ -55,8 +59,8 @@ class Mask(ABC):
 
 
 class RegionMask(Mask):
-    def __init__(self, name='', mtype='', visible=True):
-        super().__init__(name, mtype, visible)
+    def __init__(self, name='', mtype='', visible=True, show_border=False):
+        super().__init__(name, mtype, visible, show_border)
         self._raw = None
 
     def get_data(self):
@@ -309,6 +313,9 @@ class MaskManager(QObject, metaclass=QSingleton):
 
     def update_mask_visibility(self, name, visibility):
         self.masks[name].update_mask_visibility(visibility)
+
+    def update_border_visibility(self, name, visibility):
+        self.masks[name].update_border_visibility(visibility)
 
     def threshold_toggled(self):
         if self.threshold_mask:

@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QCursor
 
 from hexrd.instrument import unwrap_h5_to_dict
+from hexrdgui.masking.constants import MaskType
 
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
@@ -67,22 +68,36 @@ class MaskManagerDialog(QObject):
                 self.ui.masks_table.setItem(i, 0, QTableWidgetItem(key))
 
                 # Add checkbox to toggle visibility
-                cb = QCheckBox()
+                vis_cb = QCheckBox()
                 status = key in MaskManager().visible_masks
-                cb.setChecked(status)
-                cb.setStyleSheet('margin-left:50%; margin-right:50%;')
-                self.ui.masks_table.setCellWidget(i, 1, cb)
-                cb.toggled.connect(
-                    lambda c, k=key: self.toggle_visibility(c, k))
+                vis_cb.setChecked(status)
+                vis_cb.setStyleSheet('margin-left:50%; margin-right:50%;')
+                self.ui.masks_table.setCellWidget(i, 1, vis_cb)
+                vis_cb.toggled.connect(
+                    lambda c, k=key: self.toggle_mask_visibility(c, k))
+
+                # Add checkbox to toggle visibility
+                border_cb = QCheckBox()
+                status = (MaskManager().masks[key].type == MaskType.region)
+                border_cb.setChecked(status)
+                border_cb.setStyleSheet('margin-left:50%; margin-right:50%;')
+                self.ui.masks_table.setCellWidget(i, 2, border_cb)
+                border_cb.toggled.connect(
+                    lambda c, k=key: self.toggle_border_visibility(c, k))
 
                 # Add push button to remove mask
                 pb = QPushButton('Remove Mask')
-                self.ui.masks_table.setCellWidget(i, 2, pb)
+                self.ui.masks_table.setCellWidget(i, 3, pb)
                 pb.clicked.connect(lambda i=i, k=key: self.remove_mask(i, k))
 
-    def toggle_visibility(self, checked, name):
+    def toggle_mask_visibility(self, checked, name):
         MaskManager().update_mask_visibility(name, checked)
         MaskManager().masks_changed()
+
+    def toggle_border_visibility(self, checked, name):
+        MaskManager().update_border_visibility(name, checked)
+        # TODO: Signal to update if borders are drawn
+        # MaskManager().masks_changed()
 
     def remove_mask(self, row, name):
         MaskManager().remove_mask(name)
