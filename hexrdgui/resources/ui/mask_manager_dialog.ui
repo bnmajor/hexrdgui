@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>695</width>
-    <height>229</height>
+    <width>681</width>
+    <height>204</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -89,6 +89,12 @@
      <property name="sortingEnabled">
       <bool>false</bool>
      </property>
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>52</number>
+     </attribute>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>120</number>
+     </attribute>
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>true</bool>
      </attribute>
@@ -99,7 +105,15 @@
      </column>
      <column>
       <property name="text">
-       <string>Visible</string>
+       <string>Apply Mask</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignCenter</set>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Show Boundary</string>
       </property>
       <property name="textAlignment">
        <set>AlignCenter</set>
